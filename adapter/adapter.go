@@ -5,6 +5,7 @@ import (
 	"errors"
 	"faf-pioneer/applog"
 	"faf-pioneer/faf"
+	"faf-pioneer/filesync"
 	"faf-pioneer/gpgnet"
 	"faf-pioneer/icebreaker"
 	"faf-pioneer/launcher"
@@ -137,6 +138,9 @@ func (a *Adapter) Start() error {
 	// Initialize GPG-Net control plane server (connects to FAF.exe) and client (connects to FAF-Client).
 	gpgNetServer := faf.NewGpgNetServer(a.ctx, a.cancel, peerManager, a.launcherInfo.GpgNetPort)
 	gpgNetClient := faf.NewGpgNetClient(a.ctx, a.launcherInfo.GpgNetClientPort)
+
+	// Start the background RPC server to listen for FAF Client file sync commands
+	go filesync.StartRPCServer()
 
 	// Redirect messages from FAF.exe to FAF-Client
 	go util.RedirectChannelWithContext(a.ctx, a.gpgNetFromGame, a.gpgNetToFafClient)
