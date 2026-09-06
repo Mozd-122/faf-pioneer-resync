@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"faf-pioneer/applog"
+	"faf-pioneer/filesync"
 	"faf-pioneer/moho"
 	"faf-pioneer/util"
 	"fmt"
@@ -268,6 +269,12 @@ func (p *Peer) registerConnectionHandlers() {
 		applog.FromContext(p.ctx).Debug(
 			"Data channel opened for peer connection; waiting for local address form candidate pairs.")
 
+		// Catch the file channel and return early so this doesn't get treated as game data
+		if dataChannel.Label() == "saveFileSync" {
+			filesync.RegisterIncomingChannel(dataChannel)
+			return
+		}
+
 		// If local address are not set yet in `onPeerStateChanged` we will wait for it,
 		// otherwise it will be read instantly and no lock will occur,
 		// so DataChannel will be registered straight away.
@@ -324,6 +331,9 @@ func (p *Peer) initiateConnection() error {
 
 		p.gameDataChannel = dataChannel
 		p.RegisterDataChannel()
+
+		//Attach file sync channel
+		filesync.AttachChannel(p.connection)
 
 		// Sets the LocalDescription, and starts our UDP listeners
 		// Note: this will start the gathering of ICE candidates
